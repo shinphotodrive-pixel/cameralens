@@ -1,0 +1,6 @@
+{
+  "name": "2MP+ 글로벌셔터 USB 카메라 & 12mm M12 렌즈 조달 가이드",
+  "description": "2MP 이상 글로벌 셔터 USB 카메라 바디와 12mm F2.8 이상 M12 렌즈의 분리 조달 조합, 실시간 화각(FOV) 시뮬레이터, 대역폭 병목 분석 및 구매처 통합 의사결정 시스템",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

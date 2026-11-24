@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2MP+ 글로벌셔터 USB 카메라 &amp; 12mm M12 렌즈 조달 인터랙티브 가이드</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<!-- Chosen Palette: Warm Stone & Slate Blue Minimal (Background: #FAF9F6, Surface: #FFFFFF, Border: #E7E5E4, Primary Text: #1C1917, Secondary Text: #57534E, Primary Accent: #1D4ED8, Secondary Accent: #0D9488) -->
+<!-- Application Structure Plan: The SPA is designed around an engineering procurement and system integration workflow rather than a linear document layout. It consists of: 1) Executive Summary & Optimal Procurement Pathways (highlighting the "Modular Body + Lens" conclusion vs. the ELP all-in-one caveat), 2) Interactive System Configurator & FOV Simulator (allowing engineers to pair specific camera bodies and 12mm lenses, calculating real-time FOV, target width at custom distances, estimated BOM cost, and flagging IR-cut/housing/NDAA warnings), 3) Comparative Hardware Explorer (filterable/sortable tables for USB Global Shutter Cameras and 12mm M12 Lenses with direct purchase URLs), 4) Optical & Bandwidth Performance Analytics (Chart.js visualizations comparing sensor FOV coverage and USB 2.0 vs. 3.0 uncompressed vs. MJPEG frame rate bottlenecks), and 5) Pre-Deployment Engineering Checklist (interactive verification cards for IR-cut filters, holder height/enclosure clearance, NDAA Section 889 compliance, and hardware GPIO triggers). This task-oriented structure empowers rapid hardware selection and prevents costly procurement mismatches. -->
+<!-- Visualization & Content Choices: 1) Sensor FOV & Coverage Comparison -> Goal: Compare -> Grouped Bar Chart (Chart.js Canvas) comparing HFOV, VFOV, DFOV, and 10m/15m target widths across AR0234CS, IMX392, and OV2311/2312 -> Interaction: Hover tooltips & toggle between degrees and meters -> Justification: Visually clarifies how identical 12mm focal length yields different capture widths depending on optical format. 2) USB Bandwidth & FPS Bottleneck -> Goal: Compare/Analyze -> Horizontal Bar Chart (Chart.js Canvas) comparing theoretical/actual FPS across USB 2.0 vs. USB 3.0 for Uncompressed UYVY/YUY2 vs. MJPEG -> Interaction: Format filter buttons -> Justification: Highlights why USB 2.0 (ELP) forces lossy MJPEG compression while USB 3.0 supports high-speed uncompressed streams. 3) Interactive FOV & BOM Configurator -> Goal: Organize/Synthesize -> Dynamic HTML/CSS/Canvas visual field-of-view cone + live compatibility engine -> Interaction: Dropdown selectors for Camera, Lens, and Target Distance slider -> Justification: Directly solves the report's core challenge of matching separate camera bodies and M12 lenses safely. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<style>
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    background-color: #FAF9F6;
+    color: #1C1917;
+    overflow-x: hidden;
+  }
+  .chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 300px;
+    max-height: 380px;
+  }
+  @media (min-width: 768px) {
+    .chart-container {
+      height: 340px;
+    }
+  }
+  .nav-pill.active {
+    background-color: #1D4ED8;
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #F5F5F4;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #D6D3D1;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body class="antialiased selection:bg-blue-100 selection:text-blue-900">
+
+<!-- Sticky Navigation Header -->
+<header class="sticky top-0 z-40 bg-[#FAF9F6]/95 backdrop-blur border-b border-stone-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between py-3 gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-700 text-white font-bold text-sm">GS</span>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-stone-900 leading-tight">2MP+ 글로벌셔터 USB 카메라 &amp; 12mm 렌즈 조달 분석</h1>
+          <p class="text-xs text-stone-500">M12(S-Mount) · F2.8 이상 · 광학·대역폭·구매처 통합 의사결정 시스템</p>
+        </div>
+      </div>
+      <nav class="flex flex-wrap gap-1.5" id="main-nav">
+        <button data-target="sec-overview" class="nav-pill active px-3 py-1.5 rounded-full text-xs sm:text-sm text-stone-600 hover:bg-stone-200/70 transition">핵심 결론</button>
+        <button data-target="sec-configurator" class="nav-pill px-3 py-1.5 rounded-full text-xs sm:text-sm text-stone-600 hover:bg-stone-200/70 transition">조합 시뮬레이터</button>
+        <button data-target="sec-cameras" class="nav-pill px-3 py-1.5 rounded-full text-xs sm:text-sm text-stone-600 hover:bg-stone-200/70 transition">카메라 DB</button>
+        <button data-target="sec-lenses" class="nav-pill px-3 py-1.5 rounded-full text-xs sm:text-sm text-stone-600 hover:bg-stone-200/70 transition">12mm 렌즈 DB</button>
+        <button data-target="sec-analytics" class="nav-pill px-3 py-1.5 rounded-full text-xs sm:text-sm text-stone-600 hover:bg-stone-200/70 transition">화각·대역폭 분석</button>
+        <button data-target="sec-checklist" class="nav-pill px-3 py-1.5 rounded-full text-xs sm:text-sm text-stone-600 hover:bg-stone-200/70 transition">도입 체크리스트</button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+  <!-- Section 1: Executive Overview & Procurement Pathways -->
+  <section id="sec-overview" class="scroll-mt-20 space-y-6">
+    <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <span class="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide">EXECUTIVE SUMMARY · 조사 핵심 결론</span>
+        <span class="text-xs text-stone-400">요구 사양: ≥2MP · Global Shutter · USB · M12 · 12mm · ≥F2.8</span>
+      </div>
+      <h2 class="text-xl sm:text-2xl font-bold text-stone-900 mb-3">완제품 단일 모델 부재에 따른 최적 분리 조달 전략</h2>
+      <p class="text-sm sm:text-base text-stone-600 leading-relaxed mb-6">
+        해상도 2MP 이상, 글로벌 셔터, USB 인터페이스, M12 마운트, 초점거리 12mm, 조리개 F2.8 이상 조건을 출하 시점부터 완제품 단일 품목으로 모두 충족하고 조리개(F값) 사양까지 공식 확인되는 기성 카메라는 확인되지 않았습니다. 가장 근접한 기성품인 <strong>ELP-USBGS1200P01-L12</strong>는 12mm 렌즈 옵션을 제공하나 F값이 미기재되어 있고 USB 2.0 대역폭 한계로 비압축 고속 전송이 제한됩니다. 따라서 <strong>표준 M12(S-Mount) 렌즈 교체가 가능한 USB 3.0 글로벌 셔터 카메라 바디</strong>와 <strong>12mm F2.8 이상 M12 단초점 렌즈</strong>를 분리 구매하여 결합하는 것이 가장 확실한 조달 경로입니다.
+      </p>
+
+      <!-- Key Metrics Strip -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-stone-50 rounded-xl p-4 border border-stone-200/80">
+          <div class="text-xs text-stone-500 font-medium mb-1">완제품 100% 충족 기성품</div>
+          <div class="text-2xl font-bold text-rose-600">0 종</div>
+          <div class="text-xs text-stone-500 mt-1">ELP L12 모델 F값 미상·USB 2.0 한계</div>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4 border border-stone-200/80">
+          <div class="text-xs text-stone-500 font-medium mb-1">표준 M12(S-Mount) 규격</div>
+          <div class="text-2xl font-bold text-stone-900">M12 × P0.5</div>
+          <div class="text-xs text-stone-500 mt-1">나사산 직경 12mm · 피치 0.5mm 호환</div>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4 border border-stone-200/80">
+          <div class="text-xs text-stone-500 font-medium mb-1">조리개 F2.8의 광학적 이점</div>
+          <div class="text-2xl font-bold text-teal-700">심도 + 수광량</div>
+          <div class="text-xs text-stone-500 mt-1">피사계 심도(≥F2.8)와 저조도 동시 충족</div>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4 border border-stone-200/80">
+          <div class="text-xs text-stone-500 font-medium mb-1">USB 3.0 비압축 실효 대역폭</div>
+          <div class="text-2xl font-bold text-blue-700">~380 MB/s</div>
+          <div class="text-xs text-stone-500 mt-1">USB 2.0(~35 MB/s) 대비 약 10.8배</div>
+        </div>
+      </div>
+
+      <!-- 3 Recommended Pathways Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-xl border-2 border-blue-600/20 bg-blue-50/30 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2 py-0.5 rounded bg-blue-700 text-white text-xs font-bold">경로 A · 국내 즉시 조달</span>
+              <span class="text-xs font-semibold text-blue-800">프로토타입·빠른 수급</span>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1.5">Arducam B0495 + M1812ZH03S</h3>
+            <p class="text-xs text-stone-600 leading-relaxed mb-3">
+              디바이스마트·가치창조기술에서 국내 재고로 즉시 구매 가능한 조합입니다. B0495 보드형(또는 B0495C 케이스형)의 기본 3.6mm 렌즈를 탈거하고 12mm F2.8 저왜곡 렌즈를 체결합니다.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-blue-200/60 flex items-center justify-between text-xs">
+            <span class="font-semibold text-stone-700">예상 합산: 약 30~33만 원대</span>
+            <button onclick="applyPreset('arducam')" class="text-blue-700 font-bold hover:underline">시뮬레이터에 적용 →</button>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-stone-200 bg-white p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2 py-0.5 rounded bg-teal-700 text-white text-xs font-bold">경로 B · 산업용·NDAA 준수</span>
+              <span class="text-xs font-semibold text-teal-800">공공·교통·보안 인프라</span>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1.5">Basler / IDS / e-con + 산업용 렌즈</h3>
+            <p class="text-xs text-stone-600 leading-relaxed mb-3">
+              NDAA 제889조 준수 및 하드웨어 트리거·고속 비압축 전송이 필수인 현장에 적합합니다. Basler daA1920-160uc(160fps) 또는 See3CAM_24CUG에 Edmund Optics 또는 Commonlands 렌즈를 결합합니다.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+            <span class="font-semibold text-stone-700">예상 합산: $223 ~ $600</span>
+            <button onclick="applyPreset('industrial')" class="text-teal-700 font-bold hover:underline">시뮬레이터에 적용 →</button>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-amber-200 bg-amber-50/30 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2 py-0.5 rounded bg-amber-600 text-white text-xs font-bold">경로 C · 저가형 일체형 (유의)</span>
+              <span class="text-xs font-semibold text-amber-800">단순 테스트·예산 제약</span>
+            </div>
+            <h3 class="font-bold text-stone-900 text-base mb-1.5">ELP-USBGS1200P01-L12</h3>
+            <p class="text-xs text-stone-600 leading-relaxed mb-3">
+              12mm 렌즈 옵션(-L12) 선택 주문이 가능한 유일한 기성품이나, 렌즈 F값이 공개되지 않았고 USB 2.0 인터페이스로 동작해 90fps 출력 시 손실 압축(MJPEG)만 지원합니다.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-amber-200/60 flex items-center justify-between text-xs">
+            <span class="font-semibold text-stone-700">단품 가격: 약 $75.90~$76.50</span>
+            <button onclick="applyPreset('elp')" class="text-amber-800 font-bold hover:underline">제약사항 확인 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Interactive System Configurator & FOV Simulator -->
+  <section id="sec-configurator" class="scroll-mt-20 space-y-6">
+    <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <div class="mb-6">
+        <span class="px-2.5 py-1 rounded-md bg-teal-50 text-teal-700 text-xs font-semibold tracking-wide">SYSTEM CONFIGURATOR · 조합 및 화각 시뮬레이터</span>
+        <h2 class="text-xl sm:text-2xl font-bold text-stone-900 mt-2">카메라 바디 × 12mm 렌즈 조합 검증 및 촬영 폭 계산기</h2>
+        <p class="text-sm text-stone-600 mt-1">
+          이 섹션에서는 조달 후보 카메라 바디와 12mm(또는 12.5mm) M12 렌즈를 선택하고 촬영 거리를 조절하여, 센서의 유효 크기에 따른 실제 수평·수직 화각(FOV), 목표 거리에서의 촬영 영역 크기, 그리고 IR-Cut 필터·케이스 간섭·NDAA 규제 적합성을 실시간으로 시뮬레이션할 수 있습니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Controls Panel -->
+        <div class="lg:col-span-5 space-y-4 bg-stone-50 p-5 rounded-xl border border-stone-200">
+          <div>
+            <label for="cfg-camera" class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">1. 카메라 바디 선택</label>
+            <select id="cfg-camera" class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 focus:border-blue-600 focus:outline-none">
+              <option value="arducam_b0495">Arducam B0495 (보드형 / AR0234 / USB 3.2 / 국내즉시)</option>
+              <option value="arducam_b0495c">Arducam B0495C (케이스형 / AR0234 / USB 3.2 / 국내즉시)</option>
+              <option value="basler_160">Basler dart daA1920-160uc S-Mount (IMX392 / 160fps / NDAA)</option>
+              <option value="ids_u3">IDS uEye+ U3-3561XLS (AR0234 / 102fps / U3V)</option>
+              <option value="econ_24cug_board">e-con See3CAM_24CUG 보드형 (AR0234CS / GPIO 트리거 / NDAA)</option>
+              <option value="econ_24cug_case">e-con See3CAM_24CUG 케이스형 (AR0234CS / NDAA)</option>
+              <option value="econ_20cug">e-con See3CAM_20CUG 흑백 (OV2311 / 90fps / NDAA)</option>
+              <option value="elp_l12">ELP-USBGS1200P01-L12 일체형 (AR0234 / USB 2.0 / F값 미상)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="cfg-lens" class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">2. 12mm M12 렌즈 선택</label>
+            <select id="cfg-lens" class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 focus:border-blue-600 focus:outline-none">
+              <option value="arducam_m1812">Arducam M1812ZH03S (12mm / F2.8 / 국내즉시 52,800원)</option>
+              <option value="commonlands_cil125_irc">Commonlands CIL125 IRC (12.5mm / F3.6 / 650nm IR-Cut 내장 / $39)</option>
+              <option value="commonlands_cil125_nir">Commonlands CIL125 NIR (12.5mm / F3.6 / 무필터 야간IR용 / $39)</option>
+              <option value="edmund_33878">Edmund Optics #33-878 UCi (12mm / f/4.0 / IR필터 없음 / $270)</option>
+              <option value="edmund_uav">Edmund Optics #56710 UAV (12mm / f/2.8 / 초저왜곡)</option>
+              <option value="azure_ir">Azure Photonics IR1228B5M (12mm / F2.8 / IR 보정)</option>
+              <option value="elp_stock">ELP 기본 동봉 12mm 옵션 렌즈 (F값 미기재)</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label for="cfg-distance" class="text-xs font-bold text-stone-700 uppercase tracking-wider">3. 피사체 촬영 거리 (m)</label>
+              <span id="cfg-distance-val" class="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">10.0 m</span>
+            </div>
+            <input type="range" id="cfg-distance" min="2" max="30" step="0.5" value="10" class="w-full accent-blue-700 cursor-pointer">
+            <div class="flex justify-between text-[11px] text-stone-400 mt-1">
+              <span>2m (근거리)</span>
+              <span>10m (표준 단속)</span>
+              <span>15m (원거리)</span>
+              <span>30m</span>
+            </div>
+          </div>
+
+          <!-- Quick Result Summary Box -->
+          <div class="bg-white rounded-lg p-4 border border-stone-200 space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">탑재 센서 / 유효 크기</span>
+              <span id="res-sensor" class="font-semibold text-stone-900">-</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">산출 화각 (HFOV × VFOV)</span>
+              <span id="res-fov" class="font-semibold text-blue-700">-</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">설정 거리 촬영 영역 (가로 × 세로)</span>
+              <span id="res-area" class="font-bold text-teal-700">-</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">USB 전송 규격 및 최대 속도</span>
+              <span id="res-usb" class="font-semibold text-stone-900">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Cone Canvas & Engineering Diagnostics -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="bg-stone-900 rounded-xl p-4 text-white">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-stone-300">광학 화각(FOV) 및 촬영 폭 실시간 시각화 (Top-Down View)</span>
+              <span id="canvas-badge" class="text-[11px] px-2 py-0.5 rounded bg-blue-600 text-white font-medium">Rectilinear 기준</span>
+            </div>
+            <div class="w-full h-48 sm:h-56 relative">
+              <canvas id="fov-canvas" class="w-full h-full rounded-lg bg-stone-950 border border-stone-800"></canvas>
+            </div>
+          </div>
+
+          <!-- Automated Engineering Compatibility Alerts -->
+          <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
+            <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider mb-2.5">엔지니어링 호환성 및 조달 주의사항 진단</h4>
+            <div id="cfg-diagnostics" class="space-y-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: USB Global Shutter Camera Comparison Explorer -->
+  <section id="sec-cameras" class="scroll-mt-20 space-y-6">
+    <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div>
+          <span class="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide">CAMERA DATABASE · 바디 사양 및 구매처</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-stone-900 mt-2">USB 글로벌 셔터 M12 마운트 카메라 구매 URL 비교</h2>
+          <p class="text-sm text-stone-600 mt-1">
+            M12(S-Mount) 표준 규격을 지원하는 주요 2MP 이상 글로벌 셔터 USB 카메라 목록입니다. 필터를 활용해 국내 즉시 조달 가능 모델이나 NDAA 규제 준수 산업용 모델을 선별하고 공식 스토어 및 유통사 구매 페이지로 바로 이동할 수 있습니다.
+          </p>
+        </div>
+        <!-- Filter Buttons -->
+        <div class="flex flex-wrap gap-1.5" id="cam-filters">
+          <button data-filter="all" class="cam-filter-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white">전체 (6)</button>
+          <button data-filter="korea" class="cam-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">국내 즉시 조달</button>
+          <button data-filter="ndaa" class="cam-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">NDAA 준수·산업용</button>
+          <button data-filter="usb3" class="cam-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">USB 3.0 이상</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar border border-stone-200 rounded-xl">
+        <table class="min-w-full divide-y divide-stone-200 text-left text-xs sm:text-sm">
+          <thead class="bg-stone-50 text-stone-700 font-bold">
+            <tr>
+              <th class="px-4 py-3 whitespace-nowrap">구분 / 모델명</th>
+              <th class="px-4 py-3 whitespace-nowrap">센서 / 해상도</th>
+              <th class="px-4 py-3 whitespace-nowrap">USB / 최대 속도</th>
+              <th class="px-4 py-3 whitespace-nowrap">기본 렌즈 상태</th>
+              <th class="px-4 py-3 whitespace-nowrap">가격 범위</th>
+              <th class="px-4 py-3 whitespace-nowrap">구매 및 제품 URL</th>
+            </tr>
+          </thead>
+          <tbody id="camera-table-body" class="divide-y divide-stone-200 bg-white">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Model Confusion & Exclusion Warning Banner -->
+      <div class="mt-5 bg-stone-50 border border-stone-200 rounded-xl p-4 text-xs text-stone-600 space-y-1.5">
+        <div class="font-bold text-stone-800">⚠️ 주문 시 유사 모델 및 마운트 규격 혼동 주의</div>
+        <p>• <strong>Basler dart 시리즈 구분:</strong> <code class="bg-stone-200 px-1 rounded">daA1920-30uc (S-Mount)</code>는 30fps의 onsemi MT9P031 센서를 탑재하므로, 160fps Sony IMX392 글로벌 셔터 모델인 <code class="bg-blue-100 text-blue-900 px-1 rounded font-semibold">daA1920-160uc/um</code>과 반드시 구분해 주문해야 합니다.</p>
+        <p>• <strong>C/CS-Mount 제외 모델:</strong> 노비텍(NOVITEC) <code class="bg-stone-200 px-1 rounded">uN2-23C/M</code>, The Imaging Source <code class="bg-stone-200 px-1 rounded">DFK 33UR0234</code>, 하이크로봇(Hikrobot) <code class="bg-stone-200 px-1 rounded">MV-CS020-10UC</code>(NDAA 규제 대상)는 C/CS-Mount 규격이라 M12 렌즈를 직접 장착할 수 없습니다.</p>
+        <p>• <strong>기타 저가형/카탈로그 모델:</strong> SVPRO 1200P 120fps 모델($37.20, <a href="https://threecents.com/products/svpro-1200p-120fps-global-shutter-usb-30-camera-module-720p/250309226/" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">Threecents</a>)은 기본 85° M12 렌즈가 장착 출하되며, Kayeton 2.8–12mm 가변 모델 및 NEWLINK NLK-2MPGBC는 F값과 단품가가 비공개되어 공급사 확인이 필요합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: 12mm M12 Lens Explorer -->
+  <section id="sec-lenses" class="scroll-mt-20 space-y-6">
+    <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div>
+          <span class="px-2.5 py-1 rounded-md bg-teal-50 text-teal-700 text-xs font-semibold tracking-wide">OPTICAL LENS DATABASE · 12mm M12 단초점 렌즈</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-stone-900 mt-2">12mm M12 마운트 F2.8 이상 렌즈 구매 URL 비교</h2>
+          <p class="text-sm text-stone-600 mt-1">
+            1/2.3"~1/1" 이미지 서클을 지원하여 1/2.6"(AR0234), 1/2.3"(IMX392), 1/2.9"(OV2311/2312) 센서에서 비네팅 없이 동작하는 12mm급 M12 렌즈 목록입니다. 조리개 값(F2.8 vs F3.6~4.0)과 IR-Cut 필터 유무에 따라 필터링할 수 있습니다.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-1.5" id="lens-filters">
+          <button data-filter="all" class="lens-filter-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white">전체 (7)</button>
+          <button data-filter="f28" class="lens-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">F/2.8 밝기</button>
+          <button data-filter="f36_40" class="lens-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">F/3.6 ~ F/4.0 심도</button>
+          <button data-filter="ir" class="lens-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">IR 보정·필터 선택</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar border border-stone-200 rounded-xl">
+        <table class="min-w-full divide-y divide-stone-200 text-left text-xs sm:text-sm">
+          <thead class="bg-stone-50 text-stone-700 font-bold">
+            <tr>
+              <th class="px-4 py-3 whitespace-nowrap">구분 / 모델명</th>
+              <th class="px-4 py-3 whitespace-nowrap">초점거리 / 조리개</th>
+              <th class="px-4 py-3 whitespace-nowrap">지원 센서 / 해상도</th>
+              <th class="px-4 py-3 whitespace-nowrap">IR-Cut 필터 여부</th>
+              <th class="px-4 py-3 whitespace-nowrap">가격</th>
+              <th class="px-4 py-3 whitespace-nowrap">구매 및 제품 URL</th>
+            </tr>
+          </thead>
+          <tbody id="lens-table-body" class="divide-y divide-stone-200 bg-white">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Brighter Night-Vision Lens Alternatives -->
+      <div class="mt-5 bg-teal-50/50 border border-teal-200/80 rounded-xl p-4 text-xs text-stone-700">
+        <span class="font-bold text-teal-900">🌙 야간 저조도 특화 대안 (F2.8보다 밝은 조리개가 필요한 경우):</span>
+        Commonlands의 방수형 <a href="https://commonlands.com/products/ip67-12mm-m12-lens-cil120" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold underline">CIL120 (12.2mm, F/2.4, IP67, $39.00)</a> 또는 가시광·850~940nm 적외선 초점 보정 모델인 <a href="https://commonlands.com/products/ir-corrected-12mm-m12-lens" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold underline">CIL122 (12.0mm, F/2.0, $59.00)</a>가 대안이 되며, e-con Systems·IDS uEye XLS/LE·Basler dart S-Mount 카메라와 공식 호환됩니다.
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 5: Sensor FOV & USB Bandwidth Quantitative Analytics -->
+  <section id="sec-analytics" class="scroll-mt-20 space-y-6">
+    <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <div class="mb-6">
+        <span class="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide">PERFORMANCE ANALYTICS · 광학 화각 및 전송 대역폭 비교</span>
+        <h2 class="text-xl sm:text-2xl font-bold text-stone-900 mt-2">센서 포맷별 12mm 화각 차이 및 USB 2.0 vs 3.0 대역폭 병목 분석</h2>
+        <p class="text-sm text-stone-600 mt-1">
+          동일한 12mm 초점거리 렌즈를 사용하더라도 이미지 센서의 물리적 유효 크기에 따라 화각과 원거리 촬영 폭이 달라집니다. 또한 1920×1200 해상도를 비압축으로 고속 전송하기 위해 왜 USB 3.0 이상의 인터페이스가 필수적인지 정량 데이터로 비교합니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Chart 1: Sensor FOV & Target Width -->
+        <div class="bg-stone-50 rounded-xl p-5 border border-stone-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <h3 class="font-bold text-stone-900 text-base">센서별 12mm 화각(°) 및 거리별 촬영 폭(m)</h3>
+              <div class="inline-flex rounded-lg bg-stone-200 p-0.5 text-xs">
+                <button id="btn-fov-deg" class="px-2.5 py-1 rounded-md bg-white text-stone-900 font-semibold shadow-sm">화각 (°)</button>
+                <button id="btn-fov-dist" class="px-2.5 py-1 rounded-md text-stone-600 font-medium">촬영 폭 (m)</button>
+              </div>
+            </div>
+            <p class="text-xs text-stone-500 mb-4">직교 저왜곡 렌즈 기준 (FOV = 2 × arctan(d / 2f), f = 12.0mm). 버튼으로 각도와 거리별 촬영 폭을 전환해 보세요.</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="fovChart"></canvas>
+          </div>
+          <div class="mt-4 pt-3 border-t border-stone-200 text-xs text-stone-600">
+            <strong>핵심 인사이트:</strong> 1/2.3" Sony IMX392(Basler)는 수평 화각 30.86°로 가장 넓게(15m 거리 8.28m 폭) 포착하며, 1/2.9" OV2311/2312는 22.62°로 가장 협각(망원) 효과를 냅니다.
+          </div>
+        </div>
+
+        <!-- Chart 2: USB Bandwidth & Frame Rate Bottleneck -->
+        <div class="bg-stone-50 rounded-xl p-5 border border-stone-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <h3 class="font-bold text-stone-900 text-base">1920×1200 전송 포맷별 최대 프레임 속도 (fps)</h3>
+              <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">USB 2.0 vs USB 3.0</span>
+            </div>
+            <p class="text-xs text-stone-500 mb-4">비압축 16-bit(UYVY/YUY2) 60fps 전송에는 2,211.8 Mbps(263.7 MiB/s) 대역폭이 필요해 USB 2.0(실효 ~35 MB/s)에서는 한계에 봉착합니다.</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="bandwidthChart"></canvas>
+          </div>
+          <div class="mt-4 pt-3 border-t border-stone-200 text-xs text-stone-600">
+            <strong>핵심 인사이트:</strong> USB 2.0 기반 ELP 카메라는 90fps 달성을 위해 손실 압축(MJPEG)에 의존하는 반면, USB 3.0 카메라는 비압축 UYVY를 실측 50~60fps, 8-bit RAW8을 100~160fps로 무손실 전송합니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- Compact Reference Data Table for Sensor Specs -->
+      <div class="mt-6 overflow-x-auto custom-scrollbar border border-stone-200 rounded-xl">
+        <table class="min-w-full divide-y divide-stone-200 text-xs text-left">
+          <thead class="bg-stone-100 text-stone-700 font-bold">
+            <tr>
+              <th class="px-4 py-2.5">센서 (광학 포맷)</th>
+              <th class="px-4 py-2.5">대표 적용 카메라</th>
+              <th class="px-4 py-2.5">유효 센서 크기 (H×V)</th>
+              <th class="px-4 py-2.5">수평 화각 (HFOV)</th>
+              <th class="px-4 py-2.5">수직 화각 (VFOV)</th>
+              <th class="px-4 py-2.5">대각 화각 (DFOV)</th>
+              <th class="px-4 py-2.5">거리 10m 촬영 폭</th>
+              <th class="px-4 py-2.5">거리 15m 촬영 폭</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-200 bg-white">
+            <tr>
+              <td class="px-4 py-2.5 font-semibold text-stone-900">onsemi AR0234CS (1/2.6")</td>
+              <td class="px-4 py-2.5 text-stone-600">See3CAM_24CUG, IDS U3-3561XLS, Arducam B0495</td>
+              <td class="px-4 py-2.5">5.76 × 3.60 mm</td>
+              <td class="px-4 py-2.5 font-semibold text-blue-700">26.99°</td>
+              <td class="px-4 py-2.5">17.06°</td>
+              <td class="px-4 py-2.5">31.61°</td>
+              <td class="px-4 py-2.5 font-semibold">4.80 m</td>
+              <td class="px-4 py-2.5 font-semibold">7.20 m</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2.5 font-semibold text-stone-900">Sony IMX392 (1/2.3")</td>
+              <td class="px-4 py-2.5 text-stone-600">Basler dart daA1920-160uc/um</td>
+              <td class="px-4 py-2.5">6.62 × 4.14 mm</td>
+              <td class="px-4 py-2.5 font-semibold text-blue-700">30.86°</td>
+              <td class="px-4 py-2.5">19.57°</td>
+              <td class="px-4 py-2.5">36.06°</td>
+              <td class="px-4 py-2.5 font-semibold">5.52 m</td>
+              <td class="px-4 py-2.5 font-semibold">8.28 m</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2.5 font-semibold text-stone-900">OmniVision OV2311/2312 (1/2.9")</td>
+              <td class="px-4 py-2.5 text-stone-600">See3CAM_20CUG, See3CAM_27CUG</td>
+              <td class="px-4 py-2.5">4.80 × 3.90 mm</td>
+              <td class="px-4 py-2.5 font-semibold text-blue-700">22.62°</td>
+              <td class="px-4 py-2.5">18.46°</td>
+              <td class="px-4 py-2.5">28.90°</td>
+              <td class="px-4 py-2.5 font-semibold">4.00 m</td>
+              <td class="px-4 py-2.5 font-semibold">6.00 m</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 6: Pre-Deployment Engineering Checklist -->
+  <section id="sec-checklist" class="scroll-mt-20 space-y-6">
+    <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <span class="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 text-xs font-semibold tracking-wide">DEPLOYMENT CHECKLIST · 조립 및 현장 도입 검증</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-stone-900 mt-2">분리 조달 결합 및 현장 도입 전 4대 필수 점검 항목</h2>
+          <p class="text-sm text-stone-600 mt-1">
+            카메라 바디와 12mm M12 렌즈를 별도로 구매해 조립할 때 발생하는 색감 왜곡, 기구물 간섭, 조달 규정 위반 및 트리거 연동 오류를 사전에 방지하기 위한 체크리스트입니다. 각 항목을 클릭해 점검 완료 상태를 표시할 수 있습니다.
+          </p>
+        </div>
+        <div class="bg-stone-100 px-4 py-2.5 rounded-xl border border-stone-200 text-right shrink-0">
+          <div class="text-[11px] text-stone-500 font-semibold">점검 진행률</div>
+          <div id="checklist-progress" class="text-lg font-bold text-blue-700">0 / 4 완료</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="checklist-grid">
+        <!-- Item 1 -->
+        <div class="check-card cursor-pointer rounded-xl border border-stone-200 bg-stone-50/60 p-5 hover:border-blue-400 transition" data-checked="false">
+          <div class="flex items-start gap-3">
+            <div class="check-box w-5 h-5 mt-0.5 rounded border-2 border-stone-400 flex items-center justify-center text-white text-xs font-bold shrink-0">✓</div>
+            <div>
+              <span class="text-[11px] font-bold text-blue-700 uppercase">CHECK 01 · 광학 필터</span>
+              <h3 class="font-bold text-stone-900 text-base mt-0.5">IR-Cut 필터 위치 및 주·야간 용도 일치 확인</h3>
+              <p class="text-xs text-stone-600 leading-relaxed mt-2">
+                <code class="bg-stone-200 px-1 rounded">Arducam B0495</code>는 기본 3.6mm 렌즈에 650nm IR-Cut 필터가 통합되어 있어, <code class="bg-stone-200 px-1 rounded">Edmund Optics #33-878</code>처럼 필터가 없는 렌즈로 교체 시 주간 색감이 왜곡됩니다. 주간 컬러 위주면 <strong>650nm IR-Cut 내장 렌즈(CIL125-M12A650 등)</strong>를, 야간 IR 조명 병행 시 <strong>무필터(M12ANIR) 또는 IR 보정 렌즈</strong>를 선택하세요.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 2 -->
+        <div class="check-card cursor-pointer rounded-xl border border-stone-200 bg-stone-50/60 p-5 hover:border-blue-400 transition" data-checked="false">
+          <div class="flex items-start gap-3">
+            <div class="check-box w-5 h-5 mt-0.5 rounded border-2 border-stone-400 flex items-center justify-center text-white text-xs font-bold shrink-0">✓</div>
+            <div>
+              <span class="text-[11px] font-bold text-blue-700 uppercase">CHECK 02 · 기구물 간섭</span>
+              <h3 class="font-bold text-stone-900 text-base mt-0.5">렌즈 홀더 높이(BFL)와 완제품 케이스 간섭 점검</h3>
+              <p class="text-xs text-stone-600 leading-relaxed mt-2">
+                <code class="bg-stone-200 px-1 rounded">Arducam M1812ZH03S</code>는 10~12mm 높이 M12 홀더 기준, <code class="bg-stone-200 px-1 rounded">CIL120</code>은 약 13mm 홀더를 권장합니다. 특히 <code class="bg-stone-200 px-1 rounded">Edmund #33-878</code>(외경 22mm, 길이 38mm)은 <code class="bg-stone-200 px-1 rounded">B0495C</code>나 <code class="bg-stone-200 px-1 rounded">See3CAM_24CUG</code> 케이스 개구부와 간섭할 수 있으므로 <strong>케이스 없는 보드형 바디</strong>를 우선 고려하세요.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="check-card cursor-pointer rounded-xl border border-stone-200 bg-stone-50/60 p-5 hover:border-blue-400 transition" data-checked="false">
+          <div class="flex items-start gap-3">
+            <div class="check-box w-5 h-5 mt-0.5 rounded border-2 border-stone-400 flex items-center justify-center text-white text-xs font-bold shrink-0">✓</div>
+            <div>
+              <span class="text-[11px] font-bold text-blue-700 uppercase">CHECK 03 · 조달 규정</span>
+              <h3 class="font-bold text-stone-900 text-base mt-0.5">공급망 보안 및 미국 국방수권법(NDAA 제889조) 준수</h3>
+              <p class="text-xs text-stone-600 leading-relaxed mt-2">
+                공공·교통·보안 인프라 구축 시 발주처의 공급망 규정을 확인해야 합니다. <strong>e-con Systems(인도/미국)</strong>와 <strong>Basler(독일)</strong>는 NDAA 제889조 준수가 명시되어 있으나, 중국계 하이크로봇(Hikrobot)은 규제 대상이며 기타 OEM(ELP 등)은 별도 적합 여부 확인이 필요합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="check-card cursor-pointer rounded-xl border border-stone-200 bg-stone-50/60 p-5 hover:border-blue-400 transition" data-checked="false">
+          <div class="flex items-start gap-3">
+            <div class="check-box w-5 h-5 mt-0.5 rounded border-2 border-stone-400 flex items-center justify-center text-white text-xs font-bold shrink-0">✓</div>
+            <div>
+              <span class="text-[11px] font-bold text-blue-700 uppercase">CHECK 04 · 동기화 제어</span>
+              <h3 class="font-bold text-stone-900 text-base mt-0.5">외부 하드웨어 트리거 및 조명 스트로브 연동 I/O</h3>
+              <p class="text-xs text-stone-600 leading-relaxed mt-2">
+                레이더·루프 센서 또는 LED 스트로브 조명과 노출 시점을 정밀 동기화해야 한다면 보드형에 <strong>6핀 GPIO(Trigger In / Strobe Out)</strong>를 제공하는 <code class="bg-stone-200 px-1 rounded">See3CAM_24CUG</code>나 USB3 Vision·GenICam 표준 I/O를 지원하는 <code class="bg-stone-200 px-1 rounded">Basler daA1920-160uc</code>, <code class="bg-stone-200 px-1 rounded">IDS U3-3561XLS</code>를 선택하는 것이 유리합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="border-t border-stone-200 bg-white mt-12 py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500">
+    <div>2MP+ 글로벌 셔터 USB 카메라 및 12mm M12 렌즈 조달 기술 조사 리포트 기반 인터랙티브 웹 애플리케이션</div>
+    <div>모든 외부 구매 링크는 새 탭에서 열립니다.</div>
+  </div>
+</footer>
+
+<script>
+const cameraData = [
+  {
+    id: 'basler_160',
+    category: '산업용 S-Mount 바디 (렌즈 미포함)',
+    model: 'Basler dart daA1920-160uc (컬러) / daA1920-160um (흑백)',
+    sensor: 'Sony IMX392 (1/2.3") / 2.3MP (1920×1200)',
+    usb: 'Global / USB 3.0 (USB3 Vision)',
+    fps: '160 fps',
+    lensState: '렌즈 미포함 (S-Mount 홀더)',
+    price: '$289.00 ~ $330.00',
+    tags: ['ndaa', 'usb3'],
+    urls: [
+      { label: 'Basler 공식(컬러)', url: 'https://www.baslerweb.com/en/shop/daa1920-160uc-s-mount/' },
+      { label: 'Basler 공식(흑백)', url: 'https://www.baslerweb.com/en/shop/daa1920-160um-s-mount/' },
+      { label: 'Graftek', url: 'https://graftek.com/product/daa1920-160uc-s/' },
+      { label: 'Electromaker', url: 'https://www.electromaker.io/shop/product/the-basler-daa1920-160uc-s-mount-usb-30-camera-with-the-sony-imx392-cmos-sensor-delivers-160-frames-per-second-at-23-mp-resolution-this-model-comes-with-a-s-mount' }
+    ]
+  },
+  {
+    id: 'ids_u3',
+    category: '산업용 S-Mount 바디',
+    model: 'IDS Imaging uEye+ U3-3561XLS Rev 1.2',
+    sensor: 'onsemi AR0234 (1/3" 표기) / 2.3MP (1920×1200)',
+    usb: 'Global / USB 3.0 (U3V·GenICam)',
+    fps: '102 fps',
+    lensState: 'S-Mount (컬러·흑백·NIR 선택)',
+    price: '$296.92 ~ $308.88',
+    tags: ['ndaa', 'usb3'],
+    urls: [
+      { label: 'IDS 공식 스토어', url: 'https://en.ids-imaging.com/store/u3-3561xls-rev-1-2.html' },
+      { label: '1stVision', url: 'https://www.1stvision.com/cameras/models/IDS-Imaging/U3-3561XLS-M/C' },
+      { label: 'Inosaki', url: 'https://inosaki.com/product/u3-3561xls-rev-1-2-ids-camera/' }
+    ]
+  },
+  {
+    id: 'econ_24cug',
+    category: 'UVC 산업용·트리거 지원',
+    model: 'e-con Systems See3CAM_24CUG',
+    sensor: 'onsemi AR0234CS (1/2.6") / 2.3MP (1920×1200)',
+    usb: 'Global / USB 3.2 Gen 1 (Type-C)',
+    fps: 'UYVY 55fps / MJPEG 114fps',
+    lensState: '렌즈 미포함(CH_TC 5팩) 또는 기본 광각 탈거',
+    price: '$184 (5팩) / $199 (모듈) / $249 (케이스)',
+    tags: ['ndaa', 'usb3'],
+    urls: [
+      { label: 'e-con 공식(영문)', url: 'https://www.e-consystems.com/industrial-cameras/ar0234-usb3-global-shutter-camera.asp' },
+      { label: 'e-con 공식(한국어)', url: 'https://www.e-consystems.com/kr/industrial-cameras/ar0234-usb3-global-shutter-camera-kr.asp' }
+    ]
+  },
+  {
+    id: 'econ_20cug',
+    category: 'UVC 흑백·RGB-IR 특화',
+    model: 'e-con Systems See3CAM_20CUG (흑백) / 27CUG (RGB-IR)',
+    sensor: 'OV2311 (2MP) / OV2312 (1/2.9", 1600×1300)',
+    usb: 'Global / USB 3.1·3.2 Gen 1',
+    fps: '90 fps (20CUG) / 36 fps (27CUG)',
+    lensState: 'M12 (S-Mount) 교체 가능',
+    price: '~130유로 (20CUG) / $229 (27CUG)',
+    tags: ['ndaa', 'usb3'],
+    urls: [
+      { label: 'See3CAM_20CUG', url: 'https://www.e-consystems.com/industrial-cameras/ov2311-monochrome-global-shutter-camera.asp' },
+      { label: 'See3CAM_27CUG', url: 'https://www.e-consystems.com/usb-cameras/2mp-ov2312-global-shutter-rgb-ir-camera.asp' }
+    ]
+  },
+  {
+    id: 'arducam_b0495',
+    category: '국내 즉시 조달 (렌즈 교체 필요)',
+    model: 'Arducam B0495C (케이스형) / B0495 (보드형)',
+    sensor: 'onsemi AR0234 (1/2.6") / 2.3MP (1920×1200)',
+    usb: 'Global / USB 3.2 Gen 1 (Type-C)',
+    fps: 'YUY2 50fps @1200p / 80fps @600p',
+    lensState: '기본 3.6mm F3.0 장착 (M12 교체형)',
+    price: '$183.99 (국내 251,400~276,540원)',
+    tags: ['korea', 'usb3'],
+    urls: [
+      { label: '디바이스마트(B0495C)', url: 'https://www.devicemart.co.kr/goods/view?no=15946262' },
+      { label: '디바이스마트(B0495)', url: 'https://www.devicemart.co.kr/goods/view?no=15946263' },
+      { label: '가치창조기술', url: 'https://m.vctec.co.kr/product/%EC%95%84%EB%91%90%EC%BA%A0-23mp-ar0234-%EC%BB%AC%EB%9F%AC-%EA%B8%80%EB%A1%9C%EB%B2%8C-%EC%85%94%ED%84%B0-usb-30-%EC%B9%B4%EB%A9%94%EB%9D%BC-%EB%AA%A8%EB%93%88-arducam-23mp-ar0234-color-glob/26549/display/1/' },
+      { label: 'RobotShop', url: 'https://www.robotshop.com/products/arducam-23mp-ar0234-color-global-shutter-usb-30-camera-module-w-encolsure' },
+      { label: 'Welectron', url: 'https://www.welectron.com/Arducam-B0495-1-23MP-AR0234-Color-Global-Shutter-USB-30-Camera-Module-Without-Encolsure_1' }
+    ]
+  },
+  {
+    id: 'elp_l12',
+    category: '저가형 12mm 옵션 일체형 (유의 필요)',
+    model: 'ELP-USBGS1200P01-L12 / -KFVIR',
+    sensor: 'onsemi AR0234 (1/2.6") / 2.3MP (1920×1200)',
+    usb: 'Global / USB 2.0 (비압축 고속 제한)',
+    fps: 'MJPEG 90 fps',
+    lensState: '12mm 옵션(-L12) 또는 2.8-12mm, F값 미기재',
+    price: '약 $75.90 ~ $76.50',
+    tags: ['legacy'],
+    urls: [
+      { label: 'ELP L12 옵션 모델', url: 'https://www.elpcctv.com/elp-2mp-ar0234-sensor-1200p-1080p-90fps-global-shutter-usb-camera-p-388.html' },
+      { label: 'ELP 2.8-12mm IR', url: 'https://www.elpcctv.com/elp-2mp-global-shutter-1200p-1080p-90fps-ir-led-for-daynight-vision-m12-2812mm-lens-usb-camera-p-566.html' }
+    ]
+  }
+];
+
+const lensData = [
+  {
+    category: '국내 즉시 조달 (F2.8)',
+    model: 'Arducam M1812ZH03S (LN077)',
+    focalAperture: '12mm / F/2.8',
+    sensorFormat: '1/1.8" (8MP+ / 4K 저왜곡)',
+    irCut: '정보 미기재 (구매 시 확인 필요)',
+    price: '48,000원 (VAT포함 52,800원)',
+    tags: ['f28'],
+    urls: [
+      { label: '디바이스마트', url: 'https://www.devicemart.co.kr/goods/view?no=15946151' },
+      { label: '가치창조기술', url: 'https://m.vctec.co.kr/product/%EC%95%84%EB%91%90%EC%BA%A0-118-4k-12mm-%EC%A0%80%EC%99%9C%EA%B3%A1-m12-%EB%A0%8C%EC%A6%88-os08a10os08a20%EC%9A%A9arducam-118-4k-12mm-low-dist/24461/' },
+      { label: 'Welectron', url: 'https://www.welectron.com/Arducam-LN077-1-18-4K-12mm-Low-Distortion-M12-Lens-for-OS08A10OS08A20-and-more-image-sensors-with-large-optical-format' }
+    ]
+  },
+  {
+    category: '산업용 고정 조리개 (F4.0)',
+    model: 'Edmund Optics #33-878 (UCi Series)',
+    focalAperture: '12.00mm / f/4',
+    sensorFormat: '최대 1/1.8" (9.00mm 서클, 12MP)',
+    irCut: '미포함 (IR Cut Filter: No, VIS 코팅)',
+    price: '$270.00',
+    tags: ['f36_40'],
+    urls: [
+      { label: 'Edmund Optics 공식', url: 'https://www.edmundoptics.com/p/12mm-f-4-uci-series-fixed-focal-length-lens/38762/' }
+    ]
+  },
+  {
+    category: '산업용 고정 조리개 (F2.8 라인업)',
+    model: 'Edmund Optics UAV / HP / 1/1" 저왜곡 시리즈',
+    focalAperture: '12mm / f/2.8',
+    sensorFormat: 'S-Mount(M12) 12mm f/2.8 라인업',
+    irCut: '상세 스펙 페이지 확인',
+    price: '온라인 견적·확인',
+    tags: ['f28'],
+    urls: [
+      { label: 'UAV 시리즈(#56710)', url: 'https://www.edmundoptics.com/p/12mm-focal-length-uav-series-fixed-focal-length-lens/56710/' },
+      { label: '1/1" 12MP(#42164)', url: 'https://www.edmundoptics.com/p/11-12mm-f28-120-megapixel-ultra-low-distortion-lens/42164/' },
+      { label: 'HP 시리즈(#28989)', url: 'https://www.edmundoptics.com/p/12mm-focal-length-hp-series-fixed-focal-length-lens/28989/' }
+    ]
+  },
+  {
+    category: '산업용 F3.6·필터 선택형',
+    model: 'Commonlands CIL125',
+    focalAperture: '12.5mm / F/3.6 (또는 F/2.4)',
+    sensorFormat: '최대 1/2.3"~1/1.8" (12MP+)',
+    irCut: '선택 가능 (M12A650 650nm IRC / M12ANIR 무필터)',
+    price: '$39.00',
+    tags: ['f36_40', 'ir'],
+    urls: [
+      { label: 'Commonlands 공식', url: 'https://commonlands.com/products/telephoto-12mm-m12-lens' }
+    ]
+  },
+  {
+    category: 'IR 보정·F2.8 산업용',
+    model: 'Azure Photonics AZURE-IR1228B5M',
+    focalAperture: '12mm / F/2.8',
+    sensorFormat: '1/1.8" (5MP, IR-Corrected)',
+    irCut: 'IR 보정 (가시광·근적외선 초점 일치)',
+    price: '견적 문의',
+    tags: ['f28', 'ir'],
+    urls: [
+      { label: 'RMA Electronics', url: 'https://www.rmaelectronics.com/azure-photonics-azure-ir1228b5m/' }
+    ]
+  },
+  {
+    category: '머신비전 F2.8',
+    model: 'Camemaker CM_LENS_10105',
+    focalAperture: '12mm / F/2.8',
+    sensorFormat: '1/1.8" (5MP, 이미지 서클 9mm)',
+    irCut: '문의 필요',
+    price: '견적 문의',
+    tags: ['f28'],
+    urls: [
+      { label: 'Camemaker 공식', url: 'https://www.camemaker.com/shop/cm-lens-10105-lens-12mm-f-2-8-1-1-8-m12-board-lens-camemake-2536' }
+    ]
+  },
+  {
+    category: '무왜곡 F2.8',
+    model: 'VA-Imaging VA-LM12-5MP-12MM',
+    focalAperture: '12mm / F/2.8',
+    sensorFormat: '1/1.8" (5MP Non-Distortion)',
+    irCut: '상세 확인 필요',
+    price: '견적 문의',
+    tags: ['f28'],
+    urls: [
+      { label: 'VA-Imaging 컬렉션', url: 'https://va-imaging.com/collections/lens-m12-camera' }
+    ]
+  }
+];
+
+const cfgCameraSpecs = {
+  arducam_b0495: { name: 'Arducam B0495 (보드형)', sensor: 'onsemi AR0234 (1/2.6")', w: 5.76, h: 3.60, usb: 'USB 3.2 Gen 1 (YUY2 50fps @1200p)', isCase: false, ndaa: false, korea: true, trigger: false, usb2: false },
+  arducam_b0495c: { name: 'Arducam B0495C (케이스형)', sensor: 'onsemi AR0234 (1/2.6")', w: 5.76, h: 3.60, usb: 'USB 3.2 Gen 1 (YUY2 50fps @1200p)', isCase: true, ndaa: false, korea: true, trigger: false, usb2: false },
+  basler_160: { name: 'Basler daA1920-160uc S-Mount', sensor: 'Sony IMX392 (1/2.3")', w: 6.62, h: 4.14, usb: 'USB 3.0 U3V (최대 160fps)', isCase: false, ndaa: true, korea: false, trigger: true, usb2: false },
+  ids_u3: { name: 'IDS uEye+ U3-3561XLS', sensor: 'onsemi AR0234 (1/2.6"급)', w: 5.76, h: 3.60, usb: 'USB 3.0 U3V (최대 102fps)', isCase: false, ndaa: true, korea: false, trigger: true, usb2: false },
+  econ_24cug_board: { name: 'e-con See3CAM_24CUG (보드형)', sensor: 'onsemi AR0234CS (1/2.6")', w: 5.76, h: 3.60, usb: 'USB 3.2 Gen 1 (UYVY 55fps / MJPEG 114fps)', isCase: false, ndaa: true, korea: false, trigger: true, usb2: false },
+  econ_24cug_case: { name: 'e-con See3CAM_24CUG (케이스형)', sensor: 'onsemi AR0234CS (1/2.6")', w: 5.76, h: 3.60, usb: 'USB 3.2 Gen 1 (UYVY 55fps / MJPEG 114fps)', isCase: true, ndaa: true, korea: false, trigger: true, usb2: false },
+  econ_20cug: { name: 'e-con See3CAM_20CUG (흑백)', sensor: 'OmniVision OV2311 (1/2.9")', w: 4.80, h: 3.90, usb: 'USB 3.1 Gen 1 (90fps 흑백)', isCase: false, ndaa: true, korea: false, trigger: true, usb2: false },
+  elp_l12: { name: 'ELP-USBGS1200P01-L12', sensor: 'onsemi AR0234 (1/2.6")', w: 5.76, h: 3.60, usb: 'USB 2.0 (MJPEG 90fps / 비압축 ~8fps)', isCase: true, ndaa: false, korea: false, trigger: false, usb2: true }
+};
+
+const cfgLensSpecs = {
+  arducam_m1812: { name: 'Arducam M1812ZH03S', f: 12.0, aperture: 'F/2.8', hasIrCut: 'unknown', bulky: false, unknownF: false },
+  commonlands_cil125_irc: { name: 'Commonlands CIL125 (M12A650)', f: 12.5, aperture: 'F/3.6', hasIrCut: 'yes', bulky: false, unknownF: false },
+  commonlands_cil125_nir: { name: 'Commonlands CIL125 (M12ANIR)', f: 12.5, aperture: 'F/3.6', hasIrCut: 'no', bulky: false, unknownF: false },
+  edmund_33878: { name: 'Edmund Optics #33-878', f: 12.0, aperture: 'f/4.0', hasIrCut: 'no', bulky: true, unknownF: false },
+  edmund_uav: { name: 'Edmund Optics #56710 UAV', f: 12.0, aperture: 'f/2.8', hasIrCut: 'unknown', bulky: false, unknownF: false },
+  azure_ir: { name: 'Azure Photonics IR1228B5M', f: 12.0, aperture: 'F/2.8', hasIrCut: 'ir_corr', bulky: false, unknownF: false },
+  elp_stock: { name: 'ELP 기본 12mm 옵션 렌즈', f: 12.0, aperture: 'F값 미기재', hasIrCut: 'unknown', bulky: false, unknownF: true }
+};
+
+function renderCameraTable(filter = 'all') {
+  const tbody = document.getElementById('camera-table-body');
+  const filtered = filter === 'all' ? cameraData : cameraData.filter(c => c.tags.includes(filter));
+  tbody.innerHTML = filtered.map(c => `
+    <tr class="hover:bg-stone-50/80 transition">
+      <td class="px-4 py-3.5 align-top">
+        <div class="text-[11px] font-semibold text-blue-700 mb-0.5">${c.category}</div>
+        <div class="font-bold text-stone-900">${c.model}</div>
+      </td>
+      <td class="px-4 py-3.5 align-top text-stone-700 text-xs">${c.sensor}</td>
+      <td class="px-4 py-3.5 align-top">
+        <div class="text-xs font-medium text-stone-800">${c.usb}</div>
+        <div class="text-xs font-bold text-teal-700 mt-0.5">${c.fps}</div>
+      </td>
+      <td class="px-4 py-3.5 align-top text-xs text-stone-600">${c.lensState}</td>
+      <td class="px-4 py-3.5 align-top text-xs font-semibold text-stone-800 whitespace-nowrap">${c.price}</td>
+      <td class="px-4 py-3.5 align-top">
+        <div class="flex flex-wrap gap-1.5">
+          ${c.urls.map(u => `<a href="${u.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white text-xs font-semibold transition">${u.label} ↗</a>`).join('')}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderLensTable(filter = 'all') {
+  const tbody = document.getElementById('lens-table-body');
+  const filtered = filter === 'all' ? lensData : lensData.filter(l => l.tags.includes(filter));
+  tbody.innerHTML = filtered.map(l => `
+    <tr class="hover:bg-stone-50/80 transition">
+      <td class="px-4 py-3.5 align-top">
+        <div class="text-[11px] font-semibold text-teal-700 mb-0.5">${l.category}</div>
+        <div class="font-bold text-stone-900">${l.model}</div>
+      </td>
+      <td class="px-4 py-3.5 align-top">
+        <span class="inline-block px-2 py-0.5 rounded bg-stone-100 text-stone-900 font-bold text-xs">${l.focalAperture}</span>
+      </td>
+      <td class="px-4 py-3.5 align-top text-xs text-stone-700">${l.sensorFormat}</td>
+      <td class="px-4 py-3.5 align-top text-xs text-stone-600">${l.irCut}</td>
+      <td class="px-4 py-3.5 align-top text-xs font-semibold text-stone-800 whitespace-nowrap">${l.price}</td>
+      <td class="px-4 py-3.5 align-top">
+        <div class="flex flex-wrap gap-1.5">
+          ${l.urls.map(u => `<a href="${u.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-2 py-1 rounded bg-teal-50 text-teal-800 hover:bg-teal-700 hover:text-white text-xs font-semibold transition">${u.label} ↗</a>`).join('')}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateConfigurator() {
+  const camKey = document.getElementById('cfg-camera').value;
+  const lensKey = document.getElementById('cfg-lens').value;
+  const dist = parseFloat(document.getElementById('cfg-distance').value);
+
+  document.getElementById('cfg-distance-val').textContent = dist.toFixed(1) + ' m';
+
+  const cam = cfgCameraSpecs[camKey];
+  const lens = cfgLensSpecs[lensKey];
+
+  const hfovRad = 2 * Math.atan(cam.w / (2 * lens.f));
+  const vfovRad = 2 * Math.atan(cam.h / (2 * lens.f));
+  const hfovDeg = (hfovRad * 180) / Math.PI;
+  const vfovDeg = (vfovRad * 180) / Math.PI;
+
+  const targetW = 2 * dist * Math.tan(hfovRad / 2);
+  const targetH = 2 * dist * Math.tan(vfovRad / 2);
+
+  document.getElementById('res-sensor').textContent = `${cam.sensor} (${cam.w}×${cam.h}mm)`;
+  document.getElementById('res-fov').textContent = `${hfovDeg.toFixed(2)}° × ${vfovDeg.toFixed(2)}° (f=${lens.f}mm)`;
+  document.getElementById('res-area').textContent = `${targetW.toFixed(2)} m × ${targetH.toFixed(2)} m (@${dist.toFixed(1)}m)`;
+  document.getElementById('res-usb').textContent = cam.usb;
+
+  const diags = [];
+  if (cam.usb2) {
+    diags.push({ type: 'warn', text: 'USB 2.0 인터페이스 한계: 1920×1200 비압축 전송 시 약 6~8fps로 제한되며, 고속 촬영 시 손실 압축(MJPEG)만 가능합니다.' });
+  } else {
+    diags.push({ type: 'ok', text: 'USB 3.0 이상 고속 전송 지원: 비압축(UYVY/YUY2/RAW8) 고속 스트리밍이 가능합니다.' });
+  }
+
+  if (lens.unknownF) {
+    diags.push({ type: 'warn', text: '조리개(F값) 사양 미기재: 공식 스펙상 F2.8 이상 여부를 확인할 수 없어 정밀 광학 설계 시 주의가 필요합니다.' });
+  } else {
+    diags.push({ type: 'ok', text: `조리개 사양(${lens.aperture}) 충족: F2.8 이상 조건을 만족하며 1/2.3" 이하 센서에서 비네팅 없이 동작합니다.` });
+  }
+
+  if (lens.bulky && cam.isCase) {
+    diags.push({ type: 'danger', text: '기구물 간섭 경고: Edmund Optics #33-878(외경 22mm, 길이 38mm)은 완제품 케이스 개구부와 간섭할 수 있으므로 보드형 바디를 선택하세요.' });
+  } else if (cam.isCase && camKey !== 'elp_l12') {
+    diags.push({ type: 'info', text: '케이스 모델 유의: 기본 장착된 광각 렌즈를 탈거해야 하며, 12mm 렌즈 돌출 길이와 홀더 높이(10~13mm) 간섭 여부를 확인하세요.' });
+  }
+
+  if (lens.hasIrCut === 'no') {
+    diags.push({ type: 'warn', text: 'IR-Cut 필터 미포함 렌즈: 주간 컬러 촬영 시 적외선 유입으로 색감이 왜곡될 수 있습니다(야간 IR 조명용 적합).' });
+  } else if (lens.hasIrCut === 'yes') {
+    diags.push({ type: 'ok', text: '650nm IR-Cut 필터 내장: 주간 컬러 촬영 시 정확한 색 재현이 가능합니다.' });
+  } else if (lens.hasIrCut === 'ir_corr') {
+    diags.push({ type: 'ok', text: 'IR 보정 광학계: 가시광선과 근적외선(850~940nm) 대역의 초점 이동이 보정된 렌즈입니다.' });
+  } else {
+    diags.push({ type: 'info', text: 'IR-Cut 필터 여부 미기재: 기존 기본 렌즈에서 필터가 분리되므로 주간 컬러 촬영 시 필터 유무를 판매처에 확인하세요.' });
+  }
+
+  if (cam.ndaa) {
+    diags.push({ type: 'ok', text: 'NDAA 제889조 준수 및 하드웨어 GPIO 트리거 연동 지원 모델입니다.' });
+  }
+
+  const badgeStyles = {
+    ok: 'bg-teal-50 border-teal-200 text-teal-900',
+    warn: 'bg-amber-50 border-amber-200 text-amber-900',
+    danger: 'bg-rose-50 border-rose-200 text-rose-900',
+    info: 'bg-blue-50 border-blue-200 text-blue-900'
+  };
+  const icons = { ok: '✅', warn: '⚠️', danger: '🚨', info: 'ℹ️' };
+
+  document.getElementById('cfg-diagnostics').innerHTML = diags.map(d => `
+    <div class="p-2.5 rounded-lg border ${badgeStyles[d.type]} flex items-start gap-2">
+      <span>${icons[d.type]}</span>
+      <span>${d.text}</span>
+    </div>
+  `).join('');
+
+  drawFovCanvas(hfovRad, dist, targetW, cam.name, lens.name);
+}
+
+function drawFovCanvas(hfovRad, dist, targetW, camName, lensName) {
+  const canvas = document.getElementById('fov-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = rect.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid lines
+  ctx.strokeStyle = '#1C1917';
+  ctx.lineWidth = 1;
+  for (let x = 40; x < w; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+
+  const startX = 48;
+  const centerY = h / 2;
+  const maxDrawDist = w - 110;
+  const drawDist = Math.max(60, (dist / 30) * maxDrawDist);
+  const endX = startX + drawDist;
+
+  // Scale vertical half-span proportionally to tan(hfov/2) * drawDist
+  const halfSpan = Math.min(h * 0.4, Math.tan(hfovRad / 2) * drawDist * 1.45);
+
+  // Cone fill
+  const grad = ctx.createLinearGradient(startX, centerY, endX, centerY);
+  grad.addColorStop(0, 'rgba(29, 78, 216, 0.45)');
+  grad.addColorStop(1, 'rgba(13, 148, 136, 0.18)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(startX, centerY);
+  ctx.lineTo(endX, centerY - halfSpan);
+  ctx.lineTo(endX, centerY + halfSpan);
+  ctx.closePath();
+  ctx.fill();
+
+  // Cone borders
+  ctx.strokeStyle = '#38BDF8';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(startX, centerY);
+  ctx.lineTo(endX, centerY - halfSpan);
+  ctx.moveTo(startX, centerY);
+  ctx.lineTo(endX, centerY + halfSpan);
+  ctx.stroke();
+
+  // Target width plane line
+  ctx.strokeStyle = '#2DD4BF';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(endX, centerY - halfSpan);
+  ctx.lineTo(endX, centerY + halfSpan);
+  ctx.stroke();
+
+  // Camera body marker
+  ctx.fillStyle = '#F8FAFC';
+  ctx.fillRect(startX - 18, centerY - 10, 18, 20);
+  ctx.fillStyle = '#3B82F6';
+  ctx.fillRect(startX, centerY - 6, 6, 12);
+
+  // Labels
+  ctx.fillStyle = '#E7E5E4';
+  ctx.font = '600 11px Pretendard, sans-serif';
+  ctx.fillText(`거리: ${dist.toFixed(1)}m`, startX + drawDist / 2 - 22, centerY - 6);
+
+  ctx.fillStyle = '#2DD4BF';
+  ctx.font = '700 12px Pretendard, sans-serif';
+  ctx.fillText(`촬영 폭 ${targetW.toFixed(2)}m`, endX + 8, centerY + 4);
+
+  ctx.fillStyle = '#A8A29E';
+  ctx.font = '11px Pretendard, sans-serif';
+  ctx.fillText(`${camName} + ${lensName}`, 12, h - 10);
+}
+
+function applyPreset(type) {
+  const camSel = document.getElementById('cfg-camera');
+  const lensSel = document.getElementById('cfg-lens');
+  if (type === 'arducam') {
+    camSel.value = 'arducam_b0495';
+    lensSel.value = 'arducam_m1812';
+  } else if (type === 'industrial') {
+    camSel.value = 'basler_160';
+    lensSel.value = 'commonlands_cil125_irc';
+  } else if (type === 'elp') {
+    camSel.value = 'elp_l12';
+    lensSel.value = 'elp_stock';
+  }
+  updateConfigurator();
+  document.getElementById('sec-configurator').scrollIntoView({ behavior: 'smooth' });
+}
+
+let fovChartInstance = null;
+let bandwidthChartInstance = null;
+
+function initCharts() {
+  const fovCtx = document.getElementById('fovChart').getContext('2d');
+  fovChartInstance = new Chart(fovCtx, {
+    type: 'bar',
+    data: {
+      labels: ['onsemi AR0234CS (1/2.6")', 'Sony IMX392 (1/2.3")', 'OmniVision OV2311/12 (1/2.9")'],
+      datasets: [
+        {
+          label: '수평 화각 HFOV (°)',
+          data: [26.99, 30.86, 22.62],
+          backgroundColor: '#1D4ED8',
+          borderRadius: 4
+        },
+        {
+          label: '수직 화각 VFOV (°)',
+          data: [17.06, 19.57, 18.46],
+          backgroundColor: '#0D9488',
+          borderRadius: 4
+        },
+        {
+          label: '대각 화각 DFOV (°)',
+          data: [31.61, 36.06, 28.90],
+          backgroundColor: '#78716C',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#E7E5E4' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  const bwCtx = document.getElementById('bandwidthChart').getContext('2d');
+  bandwidthChartInstance = new Chart(bwCtx, {
+    type: 'bar',
+    data: {
+      labels: [
+        ['USB 2.0 비압축', '(See3CAM 실측)'],
+        ['USB 2.0 비압축', '(이론 한계)'],
+        ['USB 3.0 비압축', '(UYVY/YUY2 실측)'],
+        ['USB 3.0 비압축', '(UYVY 이론 한계)'],
+        ['USB 2.0 손실압축', '(ELP MJPEG)'],
+        ['USB 3.0 비압축', '(Basler RAW8)']
+      ],
+      datasets: [{
+        label: '최대 프레임 속도 (fps @1920×1200)',
+        data: [6, 8.0, 55, 86.5, 90, 160],
+        backgroundColor: ['#E11D48', '#FB7185', '#1D4ED8', '#3B82F6', '#D97706', '#0D9488'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `최대 속도: ${ctx.parsed.x} fps`
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, title: { display: true, text: 'Frames Per Second (fps)', font: { size: 11 } }, grid: { color: '#E7E5E4' } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+document.getElementById('btn-fov-deg').addEventListener('click', function() {
+  this.className = 'px-2.5 py-1 rounded-md bg-white text-stone-900 font-semibold shadow-sm';
+  document.getElementById('btn-fov-dist').className = 'px-2.5 py-1 rounded-md text-stone-600 font-medium';
+  fovChartInstance.data.datasets = [
+    { label: '수평 화각 HFOV (°)', data: [26.99, 30.86, 22.62], backgroundColor: '#1D4ED8', borderRadius: 4 },
+    { label: '수직 화각 VFOV (°)', data: [17.06, 19.57, 18.46], backgroundColor: '#0D9488', borderRadius: 4 },
+    { label: '대각 화각 DFOV (°)', data: [31.61, 36.06, 28.90], backgroundColor: '#78716C', borderRadius: 4 }
+  ];
+  fovChartInstance.update();
+});
+
+document.getElementById('btn-fov-dist').addEventListener('click', function() {
+  this.className = 'px-2.5 py-1 rounded-md bg-white text-stone-900 font-semibold shadow-sm';
+  document.getElementById('btn-fov-deg').className = 'px-2.5 py-1 rounded-md text-stone-600 font-medium';
+  fovChartInstance.data.datasets = [
+    { label: '거리 10m 촬영 폭 (m)', data: [4.80, 5.52, 4.00], backgroundColor: '#1D4ED8', borderRadius: 4 },
+    { label: '거리 15m 촬영 폭 (m)', data: [7.20, 8.28, 6.00], backgroundColor: '#0D9488', borderRadius: 4 }
+  ];
+  fovChartInstance.update();
+});
+
+document.querySelectorAll('.cam-filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.cam-filter-btn').forEach(b => {
+      b.className = 'cam-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200';
+    });
+    this.className = 'cam-filter-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white';
+    renderCameraTable(this.dataset.filter);
+  });
+});
+
+document.querySelectorAll('.lens-filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.lens-filter-btn').forEach(b => {
+      b.className = 'lens-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200';
+    });
+    this.className = 'lens-filter-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white';
+    renderLensTable(this.dataset.filter);
+  });
+});
+
+document.querySelectorAll('.check-card').forEach(card => {
+  card.addEventListener('click', function() {
+    const isChecked = this.dataset.checked === 'true';
+    this.dataset.checked = (!isChecked).toString();
+    const box = this.querySelector('.check-box');
+    if (!isChecked) {
+      this.classList.add('border-teal-600', 'bg-teal-50/40');
+      this.classList.remove('border-stone-200', 'bg-stone-50/60');
+      box.classList.add('bg-teal-600', 'border-teal-600');
+      box.classList.remove('border-stone-400');
+    } else {
+      this.classList.remove('border-teal-600', 'bg-teal-50/40');
+      this.classList.add('border-stone-200', 'bg-stone-50/60');
+      box.classList.remove('bg-teal-600', 'border-teal-600');
+      box.classList.add('border-stone-400');
+    }
+    const total = document.querySelectorAll('.check-card').length;
+    const done = document.querySelectorAll('.check-card[data-checked="true"]').length;
+    document.getElementById('checklist-progress').textContent = `${done} / ${total} 완료`;
+  });
+});
+
+document.querySelectorAll('.nav-pill').forEach(pill => {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    const target = document.getElementById(this.dataset.target);
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+document.getElementById('cfg-camera').addEventListener('change', updateConfigurator);
+document.getElementById('cfg-lens').addEventListener('change', updateConfigurator);
+document.getElementById('cfg-distance').addEventListener('input', updateConfigurator);
+window.addEventListener('resize', updateConfigurator);
+
+renderCameraTable('all');
+renderLensTable('all');
+initCharts();
+updateConfigurator();
+</script>
+</body>
+</html>
